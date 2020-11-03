@@ -1,30 +1,20 @@
-#Meuwissen & Luo 1992 para selfing adaptado de función en Fortran que me pasa Nacho
-
-#Ver el pseudocódigo en el paper de Meuwissen & Luo que está bastante comentado
-setwd("~/Dropbox/Maestría/(A-G-H)BLUP/Matriz A y A inversa")
+#Meuwissen & Luo 1992 adapted to account for selfing generations
+#Requires recursiveASelfing
 
 source("recursiveASelfing.R")
 
-meuwSelfing <- function(ss, dd, nself) { #lo dejo así o pongo ped como en las demás? qué es el f que se pasa? 
+meuwSelfing <- function(ss, dd, nself) {
   n <- length(ss) #antes decía size(ss, dim = 1)
-  ## no entiendo qué es esto:
-  #if (msglev > 25) { #msglev=message level from 0 (minimum) to 3 (maximum); default=0
-  #  print '(3i10)' ,((/i,ss(i),dd(i)/),i = 1,n) } ## ????
-  #allocate(point(n), l(n), d(n)) # tengo que establecerlo?
   point <- rep(0, n) #the next oldest ancestor in the link list, = 0 if i is the last ancestor
   l <- rep(0, n) # element ij of matrix L
-  d <- c() #antes decía 0
-  f <- c() #antes decía f[0] = -1 cómo soluciono esto? ####????
-  for (i in 1:n) { #para cada individuo
-    ### no entiendo esta parte ????
-    #if(n>1000 .and. mod(i, int(n/10)) == 0 ) { # terminaba en & ???? 
-    #  write(*,'(a,i5,a,i10,a)') ' at',int(i/(n/10))*10,'% - ',i,' animals' }
-    is <- ss[i] #el sire
-    id <- dd[i] #la dam
+  d <- c() 
+  f <- c() 
+  for (i in 1:n) { 
+    is <- ss[i] # sire
+    id <- dd[i] # dam
     ss[i] <- max(is, id) #el mayor queda en ss sin importar si es realmente sire o si es dam
     dd[i] <- min(is, id) #el menor queda en dd sin importar si es realmente dam o si es sire
     #acá va lo de inbreeding, es lo mismo que findAlphaSelfing pero sin 1/, lo puedo poner como función aparte... 
-    #antes decía solo esto: d[i] <- 0.5 - 0.25 * (f[is] + f[id]) 
     self <- nself[i]
     if (is > 0 & id > 0) { #si padre y madre conocidos
       d[i] <- 1 + (1 - 0.5^self) * (1 - (0.5 * cffa(ped, is, id))) - 1/4 * ((1 + f[is]) + (1 + f[id]))
@@ -48,7 +38,7 @@ meuwSelfing <- function(ss, dd, nself) { #lo dejo así o pongo ped como en las d
       ks <- ss[k] #padre1 del ancestro
       kd <- dd[k] #padre2 del ancestro
       if (ks > 0) { #si el padre1 de k es conocido
-        while (point[k] > ks) { #no entiendo esta condición (en el paper dice stop if next ancestor is older(o será younger?) than sire)
+        while (point[k] > ks) { #stop if next ancestor is older(o será younger?) than sire)
           k <- point[k] }
         l[ks] <- l[ks] + r #agrega la contribución del sire
         if (ks != point[k]) { #si ks no está como ancestro de k
@@ -71,31 +61,26 @@ meuwSelfing <- function(ss, dd, nself) { #lo dejo así o pongo ped como en las d
     }
     f[i] <- fi
     ###
-    if (f[i] < 0 & abs(f[i]) < 0.001) { ## esto porqué?
+    if (f[i] < 0 & abs(f[i]) < 0.001) { ## ?
       f[i] <- 0 }
   }
   return(f)
 }
 
-ped <- data.frame(id = c(1:16),
-                  sire = c(0,0,0,0,0,1,3,5,6,4,8,1,10,8,8,8),
-                  dam = c(0,0,0,0,0,2,2,0,7,7,0,9,9,13,14,14),
-                  nself = c(0,2,0,0,5,0,0,5,0,0,0,0,3,0,0,3)); ped
+#ped <- data.frame(id = c(1:16),
+#                  sire = c(0,0,0,0,0,1,3,5,6,4,8,1,10,8,8,8),
+#                  dam = c(0,0,0,0,0,2,2,0,7,7,0,9,9,13,14,14),
+#                  nself = c(0,2,0,0,5,0,0,5,0,0,0,0,3,0,0,3)); ped
 
-# ped <- data.frame(id = c(1:16),
-#                   sire = c(0,0,0,0,0,1,3,5,6,4,8,1,10,8,8,8),
-#                   dam = c(0,0,0,0,0,2,2,0,7,7,0,9,9,13,14,14),
-#                   nself = c(rep(0,16))); ped
+#ss <- ped$sire
+#dd <- ped$dam
+#nself <- ped$nself
 
-ss <- ped$sire
-dd <- ped$dam
-nself <- ped$nself
+#fMeu <- meuwSelfing(ss, dd, nself)
 
-fMeu <- meuwSelfing(ss, dd, nself)
+#fRec <- c()
+#for (i in 1:nrow(ped)) {
+#    fRec <- c(fRec, cffa(ped, i, i) - 1) 
+#}
 
-fRec <- c()
-for (i in 1:nrow(ped)) {
-    fRec <- c(fRec, cffa(ped, i, i) - 1) 
-}
-
-fMeu - fRec # dan iguales!!!
+#fMeu - fRec # dan iguales!!!
