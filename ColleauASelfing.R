@@ -1,4 +1,3 @@
-setwd("~/Dropbox/Maestría/(A-G-H)BLUP/Matriz A y A inversa")
 source("recursiveASelfing.R")
 source("AInvSelfing.R")
 
